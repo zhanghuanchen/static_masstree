@@ -35,6 +35,35 @@ inline Json &kvtest_set_time(Json &result, const lcdf::String &base, N n, double
     return result;
 }
 
+// huanchen
+template <typename C>
+void kvtest_url_stringbag_seed(C &client)
+{
+    std::ifstream infile_url_init("url_init.dat");
+    std::string ops;
+    std::string url;
+    unsigned n = 0;
+    int count = 0;
+
+    while (infile_init >> ops >> url && count < (int)client.limit()) {
+      client.put(url, n);
+      n++;
+      count++;
+    }
+    client.wait_all();
+    client.puts_done();
+    infile_url_init.close();
+
+    client.notice("\nFinish Insertion\n");
+}
+
+// huanchen
+template <typename C>
+void kvtest_url_stringbag(C &client)
+{
+  kvtest_url_stringbag_seed(client);
+}
+
 template <typename C>
 void kvtest_sync_rw1_seed(C &client, int seed)
 {

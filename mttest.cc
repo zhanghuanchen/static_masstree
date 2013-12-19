@@ -491,6 +491,9 @@ static pthread_cond_t subtest_cond;
 #define TESTRUNNER_SIGNATURE kvtest_client<Masstree::default_table>& client
 #include "testrunner.hh"
 
+// huanchen
+MAKE_TESTRUNNER(url, kvtest_url(client));
+
 MAKE_TESTRUNNER(rw1, kvtest_rw1(client));
 // MAKE_TESTRUNNER(palma, kvtest_palma(client));
 // MAKE_TESTRUNNER(palmb, kvtest_palmb(client));
