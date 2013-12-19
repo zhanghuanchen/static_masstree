@@ -19,6 +19,8 @@
 #include "misc.hh"
 #include "kvproto.hh"
 #include <vector>
+#include <iostream>
+#include <fstream>
 using lcdf::Str;
 using lcdf::String;
 using lcdf::Json;
@@ -45,7 +47,7 @@ void kvtest_url_stringbag_seed(C &client)
     unsigned n = 0;
     int count = 0;
 
-    while (infile_init >> ops >> url && count < (int)client.limit()) {
+    while (infile_url_init >> ops >> url && count < (int)client.limit()) {
       client.put(url, n);
       n++;
       count++;

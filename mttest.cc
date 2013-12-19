@@ -492,7 +492,7 @@ static pthread_cond_t subtest_cond;
 #include "testrunner.hh"
 
 // huanchen
-MAKE_TESTRUNNER(url, kvtest_url(client));
+MAKE_TESTRUNNER(url_stringbag, kvtest_url_stringbag(client));
 
 MAKE_TESTRUNNER(rw1, kvtest_rw1(client));
 // MAKE_TESTRUNNER(palma, kvtest_palma(client));
