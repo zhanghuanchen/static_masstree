@@ -17,12 +17,14 @@
 #define STRINGBAG_HH 1
 #include "compiler.hh"
 #include "string_slice.hh"
+#include <iostream>
 
 /** */
 template <typename L>
 class stringbag {
     typedef L info_type;
     static constexpr int max_halfinfo = (1 << (4 * sizeof(info_type))) - 1;
+  //static int id_count; //h
 
   public:
 
@@ -32,8 +34,26 @@ class stringbag {
 	       && allocated_size <= (size_t) max_halfinfo);
 	main_ = make_info((int) firstpos, (int) allocated_size);
 	memset(info_, 0, sizeof(info_type) * width);
+        //id_ = id_count; //h
+        //id_count++; //h
     }
-
+  //huanchen
+  /*
+    stringbag(int width, size_t allocated_size, int id) {
+	size_t firstpos = overhead(width);
+	assert(allocated_size >= firstpos
+	       && allocated_size <= (size_t) max_halfinfo);
+	main_ = make_info((int) firstpos, (int) allocated_size);
+	memset(info_, 0, sizeof(info_type) * width);
+        id_ = id; //h
+    }
+  */
+  //huanchen
+  /*
+  int id() const {
+    return id_;
+  }
+  */
     static size_t overhead(int width) {
 	return sizeof(stringbag<L>) + width * sizeof(info_type);
     }
@@ -90,11 +110,69 @@ class stringbag {
 	    return false;
 	memcpy(s_ + pos, s, len);
 	info_[p] = make_info(pos, len);
+        //std::cout << id_ << " " << allocated_size() << "\n"; //h
 	return true;
     }
+
     bool assign(int p, lcdf::Str s) {
 	return assign(p, s.s, s.len);
     }
+
+  //huanchen
+  void compact(int suf[], int width) {
+    int sp = overhead(width);
+    int position[width];
+    int len[width];
+    int perm[width];
+    int perm_value[width];
+    int i, j, k;
+    int p, pos, l;
+    int perm_end = 0;
+    for (i = 0; i < width; i++) {
+      position[i] = 0;
+      len[i] = 0;
+      perm[i] = 0;
+      perm_value[i] = 0;
+    }
+    for (i = 0; i < width; i++) {
+      if (suf[i]) {
+        position[i] = info_pos(info_[i]);
+        len[i] = info_len(info_[i]);
+      }
+    }
+    for (i = 0; i < width; i++) {
+      if (position[i] != 0) {
+        j = 0;
+        while (j < perm_end) {
+          if (position[i] < perm_value[j]) {
+            for (k = perm_end; k > j; k--) {
+              perm_value[k] = perm_value[k-1];
+              perm[k] = perm[k-1];
+            }
+            perm_value[j] = position[i];
+            perm[j] = i;
+          }
+          j++;
+        }
+        perm_end++;
+      }
+    }
+    for (i = 0; i < perm_end; i++) {
+      p = perm[i];
+      pos = position[p];
+      l = len[p];
+      memcpy(s_ + sp, s_ + pos, l);
+      info_[p] = make_info(sp, l);
+      sp += l;
+    }
+
+    for (j = 0; j < width; j++) {
+      if (suf[j] == 0)
+        info_[j] = make_info(0, 0);
+    }
+
+    main_ = make_info(sp, allocated_size());
+  }
 
     void print(int width, FILE *f, const char *prefix, int indent) {
 	fprintf(f, "%s%*s%p (%d:)%d:%d [%d]...\n", prefix, indent, "",
@@ -106,7 +184,7 @@ class stringbag {
     }
 
   private:
-
+  //int id_; //h
     union {
 	struct {
 	    info_type main_;
@@ -126,5 +204,11 @@ class stringbag {
     }
 
 };
+
+//huanchen
+/*
+template <typename L>
+int stringbag<L>::id_count = 0;
+*/
 
 #endif

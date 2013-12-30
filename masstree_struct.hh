@@ -643,8 +643,26 @@ leaf<P>* leaf<P>::advance_to_key(const key_type& ka, nodeversion_type& v,
 template <typename P>
 void leaf<P>::hard_assign_ksuf(int p, Str s, bool initializing,
 			       threadinfo& ti) {
+  /*
     if (ksuf_ && ksuf_->assign(p, s))
 	return;
+  */
+  //huanchen
+    if (ksuf_ && ksuf_->assign(p, s))
+      return;
+    else {
+      if (ksuf_) {
+        int suf[width] = {};
+        for (int k = 0; k < width; k++) {
+          if (has_ksuf(k))
+            suf[k] = 1;
+        }
+        suf[p] = 0;
+        ksuf_->compact(suf, width);
+      }
+      if (ksuf_ && ksuf_->assign(p, s))
+	return;
+    }
 
     stringbag<uint16_t> *iksuf;
     stringbag<uint32_t> *oksuf;
@@ -660,12 +678,35 @@ void leaf<P>::hard_assign_ksuf(int p, Str s, bool initializing,
 	csz = oksuf->allocated_size() - oksuf->overhead(width);
     else
 	csz = 0;
+
+    //huanchen
+    /*
+    int id;
+    if (iksuf) {
+      id = iksuf->id();
+      csz = iksuf->allocated_size() - iksuf->overhead(width);
+    }
+    else if (oksuf) {
+      id = oksuf->id();
+      csz = oksuf->allocated_size() - oksuf->overhead(width);
+    }
+    else
+      csz = 0;
+    */
     size_t sz = iceil_log2(std::max(csz, size_t(4 * width)) * 2);
     while (sz < csz + stringbag<uint32_t>::overhead(width) + s.len)
 	sz *= 2;
 
     void *ptr = ti.allocate(sz, memtag_masstree_ksuffixes);
     stringbag<uint32_t> *nksuf = new(ptr) stringbag<uint32_t>(width, sz);
+    //huanchen
+    /*
+    stringbag<uint32_t> *nksuf;
+    if (csz)
+      nksuf = new(ptr) stringbag<uint32_t>(width, sz, id);
+    else
+      nksuf = new(ptr) stringbag<uint32_t>(width, sz);
+    */
     permuter_type perm(permutation_);
     int n = initializing ? p : perm.size();
     for (int i = 0; i < n; ++i) {
