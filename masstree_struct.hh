@@ -20,6 +20,8 @@
 #include "stringbag.hh"
 #include "mtcounters.hh"
 #include "timestamp.hh"
+
+#include <iostream>
 namespace Masstree {
 
 template <typename P>
@@ -297,6 +299,7 @@ class leaf : public node_base<P> {
 	size_t sz = iceil(sizeof(leaf<P>) + std::min(ksufsize, 128), 64);
 	void* ptr = ti.pool_allocate(sz, memtag_masstree_leaf);
 	leaf<P>* n = new(ptr) leaf<P>(sz, node_ts);
+        ti.stringbagSize = ti.stringbagSize + sz - 312;
 	assert(n);
 	if (P::debug_level > 0)
 	    n->created_at_[0] = ti.operation_timestamp();
@@ -648,22 +651,29 @@ void leaf<P>::hard_assign_ksuf(int p, Str s, bool initializing,
 	return;
   */
   //huanchen
+  
     if (ksuf_ && ksuf_->assign(p, s))
       return;
     else {
+      permuter_type perm2(permutation_);
+      int y = initializing ? p : perm2.size();
+
       if (ksuf_) {
+        //std::cout << "size = " << ksuf_->size() << "\n";
         int suf[width] = {};
-        for (int k = 0; k < width; k++) {
-          if (has_ksuf(k))
-            suf[k] = 1;
+        for (int k = 0; k < y; k++) {
+          int mk = initializing ? k : perm2[k];
+          if (mk != p && has_ksuf(mk))
+            suf[mk] = 1;
         }
         suf[p] = 0;
         ksuf_->compact(suf, width);
+        //std::cout << "size = " << ksuf_->size() << "\n\n";
       }
       if (ksuf_ && ksuf_->assign(p, s))
 	return;
     }
-
+    
     stringbag<uint16_t> *iksuf;
     stringbag<uint32_t> *oksuf;
     if (extrasize64_ > 0)
@@ -699,6 +709,8 @@ void leaf<P>::hard_assign_ksuf(int p, Str s, bool initializing,
 
     void *ptr = ti.allocate(sz, memtag_masstree_ksuffixes);
     stringbag<uint32_t> *nksuf = new(ptr) stringbag<uint32_t>(width, sz);
+
+    ti.stringbagSize += sz; //h
     //huanchen
     /*
     stringbag<uint32_t> *nksuf;
@@ -714,9 +726,21 @@ void leaf<P>::hard_assign_ksuf(int p, Str s, bool initializing,
 	if (mp != p && has_ksuf(mp)) {
 	    bool ok = nksuf->assign(mp, ksuf(mp));
             assert(ok); (void) ok;
+            //std::cout << "mp = " << mp << ", ksuf = " << ksuf(mp).len << "\n";
         }
     }
+    //std::cout << "\n\n";
     bool ok = nksuf->assign(p, s);
+    //huanchen
+    if (!ok) {
+      std::cout << "p = " << p << ", len = " << s.len << ", csz = "<< csz << ", overhead = " << stringbag<uint32_t>::overhead(width) << ", size = " << nksuf->size() << ", alloc =" << nksuf->allocated_size() << ", init = " << initializing << "\n";
+      for (int i = 0; i < n; ++i) {
+	int mp = initializing ? i : perm[i];
+	if (mp != p && has_ksuf(mp)) {
+          std::cout << "mp = " << mp << ", ksuf = " << ksuf(mp).len << "\n";
+        }
+      }
+    }
     assert(ok); (void) ok;
     fence();
 
@@ -729,10 +753,21 @@ void leaf<P>::hard_assign_ksuf(int p, Str s, bool initializing,
 
     if (extrasize64_ >= 0)	// now the new ksuf_ installed, mark old dead
 	extrasize64_ = -extrasize64_ - 1;
-
+    /*
     if (oksuf)
 	ti.deallocate_rcu(oksuf, oksuf->allocated_size(),
                           memtag_masstree_ksuffixes);
+    */
+    //huanchen
+    if (oksuf) {
+	ti.deallocate_rcu(oksuf, oksuf->allocated_size(),
+                          memtag_masstree_ksuffixes);
+        ti.stringbagSize -= oksuf->allocated_size();
+    }
+    else if (iksuf)
+      ti.stringbagSize -= iksuf->allocated_size();
+
+
 }
 
 template <typename P>

@@ -44,8 +44,26 @@ inline node_base<P>* tcursor<P>::check_leaf_insert(node_type* root,
 	    ksufsize = 0;
 	leaf_type *nl = leaf_type::make_root(ksufsize, n_, ti);
 	nl->assign_initialize(0, kc <= 0 ? oka : ka_, ti);
+        //huanchen
+        /*
+        if (kc <= 0)
+          ti.ksufSize += oka.suffix().length();//h
+        else
+          ti.ksufSize += ka_.suffix().length();//h
+        */
+        
 	if (kc != 0)
 	    nl->assign_initialize(1, kc <= 0 ? ka_ : oka, ti);
+        /*
+        if (kc != 0){
+	    nl->assign_initialize(1, kc <= 0 ? ka_ : oka, ti);
+            //huanchen
+            if (kc <= 0)
+              ti.ksufSize += ka_.suffix().length();//h
+            else
+              ti.ksufSize += oka.suffix().length();//h
+        }
+        */
 	nl->lv_[kc > 0] = n_->lv_[kp_];
 	if (kc != 0) {
 	    nl->lock(*nl, ti.lock_fence(tc_leaf_lock));
@@ -88,6 +106,7 @@ inline node_base<P>* tcursor<P>::check_leaf_insert(node_type* root,
 	// watch out for attempting to use position 0
 	if (likely(kp_ != 0) || !n_->prev_ || n_->ikey_bound() == ka_.ikey()) {
 	    n_->assign(kp_, ka_, ti);
+            ti.ksufSize += ka_.suffix().length();//h
 	    return insert_marker();
 	}
     }

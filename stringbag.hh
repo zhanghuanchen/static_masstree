@@ -18,6 +18,7 @@
 #include "compiler.hh"
 #include "string_slice.hh"
 #include <iostream>
+#include <stdint.h>
 
 /** */
 template <typename L>
@@ -106,8 +107,11 @@ class stringbag {
 	else if (size() + len <= allocated_size()) {
 	    pos = size();
 	    main_ = make_info(pos + len, allocated_size());
-	} else
-	    return false;
+	} else {
+          //std::cout << "p = " << p << ", len = " << len << ", size = " << size() << ", alloc =" << allocated_size() << "\n";
+          return false;
+        }
+        //return false;
 	memcpy(s_ + pos, s, len);
 	info_[p] = make_info(pos, len);
         //std::cout << id_ << " " << allocated_size() << "\n"; //h
@@ -119,6 +123,7 @@ class stringbag {
     }
 
   //huanchen
+  
   void compact(int suf[], int width) {
     int sp = overhead(width);
     int position[width];
@@ -134,15 +139,21 @@ class stringbag {
       perm[i] = 0;
       perm_value[i] = 0;
     }
+    //std::cout << "before stringbag\n";
     for (i = 0; i < width; i++) {
       if (suf[i]) {
         position[i] = info_pos(info_[i]);
         len[i] = info_len(info_[i]);
       }
+      //std::cout << "pos = " << position[i] << ", len = " << len[i] << "\n";
     }
     for (i = 0; i < width; i++) {
       if (position[i] != 0) {
         j = 0;
+        if (perm_end == 0) {
+          perm_value[0] = position[i];
+          perm[0] = i;
+        }
         while (j < perm_end) {
           if (position[i] < perm_value[j]) {
             for (k = perm_end; k > j; k--) {
@@ -151,12 +162,19 @@ class stringbag {
             }
             perm_value[j] = position[i];
             perm[j] = i;
+            //std::cout << "i = " << i << "\n";
+            j = perm_end;
           }
           j++;
+        }
+        if (j == perm_end) {
+          perm_value[perm_end] = position[i];
+          perm[perm_end] = i;
         }
         perm_end++;
       }
     }
+    //std::cout << "stringbag\n";
     for (i = 0; i < perm_end; i++) {
       p = perm[i];
       pos = position[p];
@@ -164,6 +182,7 @@ class stringbag {
       memcpy(s_ + sp, s_ + pos, l);
       info_[p] = make_info(sp, l);
       sp += l;
+      //std::cout << "p = " << p << ", l = " << l << "\n";
     }
 
     for (j = 0; j < width; j++) {
@@ -173,7 +192,7 @@ class stringbag {
 
     main_ = make_info(sp, allocated_size());
   }
-
+  
     void print(int width, FILE *f, const char *prefix, int indent) {
 	fprintf(f, "%s%*s%p (%d:)%d:%d [%d]...\n", prefix, indent, "",
 		this, (int) overhead(width), size(), allocated_size(), max_halfinfo + 1);
@@ -184,7 +203,7 @@ class stringbag {
     }
 
   private:
-  //int id_; //h
+  //uint32_t id_; //h
     union {
 	struct {
 	    info_type main_;

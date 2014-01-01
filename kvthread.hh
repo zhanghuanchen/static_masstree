@@ -213,7 +213,10 @@ class threadinfo {
     // XXX destructor
     static threadinfo *allthreads;
     static pthread_key_t key;
-
+  //huanchen
+  int stringbagSize;
+  int ksufSize;
+  
     // timestamps
     kvtimestamp_t operation_timestamp() const {
 	return timestamp();

@@ -96,6 +96,10 @@ threadinfo *threadinfo::make(int purpose, int index)
 {
     threadinfo *ti = (threadinfo *) malloc(8192);
 
+    //huanchen
+    ti->ksufSize = 0;
+    ti->stringbagSize = 0;
+
     memset(ti, 0, sizeof(*ti));
     ti->ti_next = allthreads;
     ti->ti_purpose = purpose;
