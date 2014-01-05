@@ -228,6 +228,15 @@ node_base<P>* tcursor<P>::finish_split(threadinfo& ti)
 		ki_ = kp_ = ki_ - perml.size();
 		n_ = nr;
 	    }
+            //huanchen
+            /*
+            ti.stringbagSize -= nl->ksuf_allocated_size();
+            nl->shrink_ksuf();
+            ti.stringbagSize += nl->ksuf_allocated_size();
+            ti.stringbagSize -= nr->ksuf_allocated_size();
+            nr->shrink_ksuf();
+            ti.stringbagSize += nr->ksuf_allocated_size();
+            */
 	}
 
 	if (n != n_)

@@ -99,6 +99,8 @@ threadinfo *threadinfo::make(int purpose, int index)
     //huanchen
     ti->ksufSize = 0;
     ti->stringbagSize = 0;
+    ti->nLeaf = 0;
+    ti->n32ksuf = 0;
 
     memset(ti, 0, sizeof(*ti));
     ti->ti_next = allthreads;

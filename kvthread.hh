@@ -216,6 +216,8 @@ class threadinfo {
   //huanchen
   int stringbagSize;
   int ksufSize;
+  int nLeaf;
+  int n32ksuf;
   
     // timestamps
     kvtimestamp_t operation_timestamp() const {

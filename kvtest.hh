@@ -59,6 +59,8 @@ void kvtest_url_stringbag_seed(C &client)
     client.notice("\nFinish Insertion\n");
     client.notice("Total Stringbag Size: %d\n", client.ti_->stringbagSize);
     client.notice("Total Suffix Size: %d\n", client.ti_->ksufSize);
+    client.notice("Total number of leafs: %d\n", client.ti_->nLeaf);
+    client.notice("Total number of 32ksufs: %d\n", client.ti_->n32ksuf);
 }
 
 // huanchen

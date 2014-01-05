@@ -193,6 +193,17 @@ class stringbag {
     main_ = make_info(sp, allocated_size());
   }
   
+
+  void shrink () {
+    int size = info_pos(main_);
+    int alloc_size = info_len(main_);
+    while (size * 2 < alloc_size) {
+      alloc_size = alloc_size / 2;
+    }
+    //std::cout << "size = " << size << ", info_len = "<< info_len(main_) <<", alloc_size = " << alloc_size << "\n";
+    main_ = make_info(size, alloc_size);
+  }
+
     void print(int width, FILE *f, const char *prefix, int indent) {
 	fprintf(f, "%s%*s%p (%d:)%d:%d [%d]...\n", prefix, indent, "",
 		this, (int) overhead(width), size(), allocated_size(), max_halfinfo + 1);
@@ -229,5 +240,6 @@ class stringbag {
 template <typename L>
 int stringbag<L>::id_count = 0;
 */
+
 
 #endif

@@ -51,19 +51,17 @@ inline node_base<P>* tcursor<P>::check_leaf_insert(node_type* root,
         else
           ti.ksufSize += ka_.suffix().length();//h
         */
-        
+
 	if (kc != 0)
 	    nl->assign_initialize(1, kc <= 0 ? ka_ : oka, ti);
-        /*
-        if (kc != 0){
-	    nl->assign_initialize(1, kc <= 0 ? ka_ : oka, ti);
-            //huanchen
-            if (kc <= 0)
-              ti.ksufSize += ka_.suffix().length();//h
-            else
-              ti.ksufSize += oka.suffix().length();//h
-        }
-        */
+
+        ti.ksufSize += ka_.suffix().length();//h
+
+        if (kc != 0)
+          ti.ksufSize -= 8;//h
+        else
+          ti.ksufSize = ti.ksufSize - oka.suffix().length() - 8;//h
+
 	nl->lv_[kc > 0] = n_->lv_[kp_];
 	if (kc != 0) {
 	    nl->lock(*nl, ti.lock_fence(tc_leaf_lock));
@@ -90,6 +88,16 @@ inline node_base<P>* tcursor<P>::check_leaf_insert(node_type* root,
 	n_->lv_[kp_] = nl;
 	fence();
 	n_->keylenx_[kp_] = sizeof(n_->ikey0_[0]) + 129;
+        //huanchen
+        
+        int has_ksuf = 0;
+        for (int i = 0; i < 15; i++) {
+          has_ksuf += n_->has_ksuf(i);
+        }
+        if (!has_ksuf) {
+          ti.stringbagSize -= n_->ksuf_allocated_size();
+        }
+        
 	n_->unlock(v);
 	if (kc != 0) {
 	    n_ = nl;

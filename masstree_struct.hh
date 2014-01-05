@@ -296,10 +296,14 @@ class leaf : public node_base<P> {
     }
 
     static leaf<P>* make(int ksufsize, kvtimestamp_t node_ts, threadinfo& ti) {
+      ti.nLeaf++;
 	size_t sz = iceil(sizeof(leaf<P>) + std::min(ksufsize, 128), 64);
+        //size_t sz_h = sizeof(leaf<P>) + std::min(ksufsize, 128);//h
 	void* ptr = ti.pool_allocate(sz, memtag_masstree_leaf);
 	leaf<P>* n = new(ptr) leaf<P>(sz, node_ts);
-        ti.stringbagSize = ti.stringbagSize + sz - 312;
+        if (n->extrasize64_ > 0)
+          ti.stringbagSize = ti.stringbagSize + sz - 312 - stringbag<uint16_t>::overhead(width);
+        //ti.stringbagSize = ti.stringbagSize + sz - 312;
 	assert(n);
 	if (P::debug_level > 0)
 	    n->created_at_[0] = ti.operation_timestamp();
@@ -442,6 +446,21 @@ class leaf : public node_base<P> {
                               memtag_masstree_ksuffixes);
 	ti.pool_deallocate_rcu(this, allocated_size(), memtag_masstree_leaf);
     }
+
+  //huanchen
+  void shrink_ksuf() {
+    if (ksuf_) {
+      ksuf_->shrink();
+    }
+  }
+
+  //huanchen
+  size_t ksuf_allocated_size() const {
+    if (extrasize64_ <= 0)
+      return ksuf_ ? ksuf_->allocated_size() : 0;
+    else
+      return iksuf_[0].allocated_size();
+  }
 
   private:
     inline void mark_deleted_layer() {
@@ -657,7 +676,6 @@ void leaf<P>::hard_assign_ksuf(int p, Str s, bool initializing,
     else {
       permuter_type perm2(permutation_);
       int y = initializing ? p : perm2.size();
-
       if (ksuf_) {
         //std::cout << "size = " << ksuf_->size() << "\n";
         int suf[width] = {};
@@ -673,7 +691,7 @@ void leaf<P>::hard_assign_ksuf(int p, Str s, bool initializing,
       if (ksuf_ && ksuf_->assign(p, s))
 	return;
     }
-    
+  
     stringbag<uint16_t> *iksuf;
     stringbag<uint32_t> *oksuf;
     if (extrasize64_ > 0)
@@ -703,14 +721,26 @@ void leaf<P>::hard_assign_ksuf(int p, Str s, bool initializing,
     else
       csz = 0;
     */
+    /*
     size_t sz = iceil_log2(std::max(csz, size_t(4 * width)) * 2);
     while (sz < csz + stringbag<uint32_t>::overhead(width) + s.len)
 	sz *= 2;
+    */
+
+    if (!oksuf)
+      ti.n32ksuf++;
+    //huanchen
+    size_t sz = csz + stringbag<uint32_t>::overhead(width) + s.len;
 
     void *ptr = ti.allocate(sz, memtag_masstree_ksuffixes);
     stringbag<uint32_t> *nksuf = new(ptr) stringbag<uint32_t>(width, sz);
 
+    //ti.stringbagSize += s.len;
+
+    //ti.stringbagSize -= csz; //h
     ti.stringbagSize += sz; //h
+    ti.stringbagSize -= stringbag<uint32_t>::overhead(width); //h
+
     //huanchen
     /*
     stringbag<uint32_t> *nksuf;
@@ -763,10 +793,12 @@ void leaf<P>::hard_assign_ksuf(int p, Str s, bool initializing,
 	ti.deallocate_rcu(oksuf, oksuf->allocated_size(),
                           memtag_masstree_ksuffixes);
         ti.stringbagSize -= oksuf->allocated_size();
+        ti.stringbagSize += stringbag<uint32_t>::overhead(width);
     }
-    else if (iksuf)
+    else if (iksuf) {
       ti.stringbagSize -= iksuf->allocated_size();
-
+      ti.stringbagSize += stringbag<uint16_t>::overhead(width);
+    }
 
 }
 
